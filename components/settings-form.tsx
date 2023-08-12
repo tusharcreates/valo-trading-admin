@@ -7,15 +7,22 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Store } from "@prisma/client";
+import axios from "axios";
 import { Trash } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
 import * as z from "zod";
+import { AlertModal } from "./modals/alert-modal";
+import { ApiAlterModal } from "./ui/api-alerts";
+import { useOrigin } from "@/hooks/use-origin";
 
 interface SettingsFormProps {
   initialData: Store;
@@ -39,27 +46,64 @@ const SettingForm: React.FC<{
 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const params = useParams();
+  const origin = useOrigin();
 
   const onSubmit = async (values: SettingsFormValues) => {
     try {
       setLoading(true);
-      console.log(values);
+      await axios.patch(`/api/stores/${params.storeId}`, values);
+      router.refresh();
+      toast.success("Store updated");
     } catch (e) {
       console.error(e);
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
+  const onDelete = async () => {
+    try {
+      setLoading(true);
+      await axios.delete(`/api/stores/${params.storeId}`);
+      router.refresh();
+      router.push("/");
+      toast.success("Store deleted");
+    } catch (e) {
+      console.error(e);
+      toast.error("Make sure you don't have any products in your store");
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  };
+
   return (
     <>
+      <AlertModal
+        isOpen={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        onConfirm={onDelete}
+        loading={loading}
+      ></AlertModal>
       <div className="flex flex-row justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
           <p>{subtitle}</p>
         </div>
         <div>
-          <Button variant={"destructive"} size={"icon"}>
+          <Button
+            disabled={loading}
+            onClick={() => {
+              setOpen(true);
+            }}
+            variant={"destructive"}
+            size={"icon"}
+          >
             <Trash></Trash>
           </Button>
         </div>
@@ -81,15 +125,24 @@ const SettingForm: React.FC<{
                     <Input
                       disabled={loading}
                       placeholder="Store Name"
+                      className="max-w-md"
                       {...field}
                     ></Input>
                   </FormControl>
+                  <FormMessage></FormMessage>
                 </FormItem>
               )}
             />
           </div>
+          <Button>Save Changes</Button>
         </form>
       </Form>
+      <Separator className="my-3" />
+      <ApiAlterModal
+        title="NEXT_PUBLIC_API_URL"
+        description={`${origin}/api/${params.storeId}`}
+        variant="public"
+      ></ApiAlterModal>
     </>
   );
 };

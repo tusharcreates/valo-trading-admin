@@ -13,6 +13,11 @@ export const MainNav = ({
 
   const route = [
     {
+      href: `/${parms.storeId}`,
+      label: "Overview",
+      active: pathname === `/${parms.storeId}`,
+    },
+    {
       href: `/${parms.storeId}/settings`,
       label: "Settings",
       active: pathname === `/${parms.storeId}/settings`,
@@ -21,7 +26,7 @@ export const MainNav = ({
 
   return (
     <nav
-      className={cn("flex items-center justify-between", className)}
+      className={cn("flex items-center justify-between gap-3", className)}
       {...pops}
     >
       {route.map((route) => (
@@ -31,8 +36,8 @@ export const MainNav = ({
           className={cn(
             "text-sm font-medium transition-colors space-x-4 hover:text-primary",
             route.active
-              ? "text-black dark:text-white"
-              : "text-muted-foregorund"
+              ? "text-black dark:text-white underline"
+              : "text-muted-foreground"
           )}
         >
           {route.label}
